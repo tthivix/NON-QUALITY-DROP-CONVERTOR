@@ -1,0 +1,72 @@
+/* Custom styles for VelvetBoost AI - complements Tailwind CSS */
+
+* {
+    transition: all 0.2s ease;
+}
+
+body {
+    background: #0a0a0a;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+}
+
+/* Custom glowing effects & glassmorphism */
+.glass-card {
+    background: rgba(18, 18, 24, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 2rem;
+}
+
+.glow-border {
+    box-shadow: 0 0 12px rgba(236, 72, 153, 0.3);
+}
+
+.upload-zone-drag {
+    border: 2px dashed rgba(236, 72, 153, 0.6);
+    background: rgba(236, 72, 153, 0.05);
+}
+
+.btn-glow {
+    transition: all 0.2s;
+}
+
+.btn-glow:hover {
+    box-shadow: 0 0 16px #ec489a;
+    transform: scale(1.02);
+}
+
+/* Hide scrollbar for cleaner look but keep functionality */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1f1f2e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ec489a;
+    border-radius: 8px;
+}
+
+/* video player responsive */
+video {
+    border-radius: 20px;
+    box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+}
+
+/* overlay animation */
+.overlay-active {
+    animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
+}
