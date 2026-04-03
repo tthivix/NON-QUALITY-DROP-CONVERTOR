@@ -1,15 +1,14 @@
 // ----------------------------------------------
-// 🔧 CONFIGURATION: Hugging Face Space 
+// 🔧 CONFIGURATION: Hugging Face Space
 // ----------------------------------------------
-// HTML එකේ ඇති importmap හරහා Gradio Client එක ගෙන්වා ගැනීම
-import { Client } from "@gradio/client";
+import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/+esm";
 
 const HF_SPACE_ID = "thivix/tiktok-hq-converter";
 const ENDPOINT_NAME = "/convert_video";      
 const INPUT_PARAM_NAME = "input_path";       
 
 // ----------------------------------------------
-// DOM elements 
+// DOM elements
 // ----------------------------------------------
 const uploadZone = document.getElementById('uploadZone');
 const fileInput = document.getElementById('videoInput');
@@ -36,7 +35,7 @@ function showError(message) {
     }, 4500);
 }
 
-// Helper: Overlay එක ඉවත් කර Button එක ක්‍රියාකාරී කිරීම
+// Helper: Overlay එක ඉවත් කිරීම
 function hideOverlayAndEnable() {
     processingOverlay.classList.add('hidden');
     convertBtn.disabled = false;
@@ -45,20 +44,21 @@ function hideOverlayAndEnable() {
 // Output එක Reset කිරීම
 function resetOutput() {
     outputSection.classList.add('hidden');
-    if (outputVideo.src) {
+    if (outputVideo.src && outputVideo.src.startsWith('blob:')) {
         URL.revokeObjectURL(outputVideo.src);
     }
     outputVideo.src = '';
     currentOutputUrl = null;
 }
 
-// File එකක් තෝරා ඇති විට පමණක් Convert Button එක Enable කිරීම
+// Convert Button එකේ තත්ත්වය වෙනස් කිරීම[cite: 5]
 function updateConvertButton() {
     convertBtn.disabled = !selectedFile;
 }
 
-// තෝරාගත් File එක ඉවත් කිරීම
-clearFileBtn.addEventListener('click', () => {
+// තෝරාගත් වීඩියෝව ඉවත් කිරීම[cite: 5]
+clearFileBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Upload zone එක click වීම වැළැක්වීමට
     selectedFile = null;
     fileInput.value = '';
     previewSection.classList.add('hidden');
@@ -67,43 +67,48 @@ clearFileBtn.addEventListener('click', () => {
     updateConvertButton();
 });
 
-// File Selection හැසිරවීම
+// වීඩියෝවක් තෝරාගත් විට ක්‍රියාත්මක වන ප්‍රධාන ශ්‍රිතය[cite: 5]
 function handleFile(file) {
     if (!file || !file.type.startsWith('video/')) {
-        showError('කරුණාකර නිවැරදි වීඩියෝවක් තෝරන්න (MP4, WebM, MOV).');
+        showError('කරුණාකර වලංගු වීඩියෝ ගොනුවක් තෝරන්න (MP4, WebM, MOV).[cite: 5]');
         return false;
     }
     if (file.size > 210 * 1024 * 1024) {
-        showError('වීඩියෝව විශාල වැඩියි. උපරිමය 200MB විය යුතුයි.');
+        showError('ගොනුව විශාල වැඩියි. උපරිමය 200MB විය යුතුයි.[cite: 5]');
         return false;
     }
     selectedFile = file;
     
-    // Preview කිරීම
+    // Preview පෙන්වීම[cite: 5]
     const url = URL.createObjectURL(file);
     originalPreview.src = url;
     previewSection.classList.remove('hidden');
     const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-    fileInfo.innerText = `${file.name} (${sizeMB} MB)`;
+    fileInfo.innerText = `${file.name} (${sizeMB} MB)[cite: 5]`;
     resetOutput();
     updateConvertButton();
     return true;
 }
 
-// Upload zone Click කිරීම
+// Click කිරීමෙන් වීඩියෝ තේරීම[cite: 5]
 uploadZone.addEventListener('click', () => fileInput.click());
+
 fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+        handleFile(e.target.files[0]);
+    }
 });
 
-// Drag & drop ක්‍රියාකාරීත්වය
+// Drag & Drop පහසුකම[cite: 5]
 uploadZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadZone.classList.add('upload-zone-drag');
 });
+
 uploadZone.addEventListener('dragleave', () => {
     uploadZone.classList.remove('upload-zone-drag');
 });
+
 uploadZone.addEventListener('drop', (e) => {
     e.preventDefault();
     uploadZone.classList.remove('upload-zone-drag');
@@ -111,89 +116,43 @@ uploadZone.addEventListener('drop', (e) => {
     if (file) handleFile(file);
 });
 
-// ========== GRADIO INTEGRATION & CONVERSION ==========
+// API එකට වීඩියෝව යැවීම[cite: 5]
 async function sendVideoToHF(file) {
     try {
-        // Hugging Face Space එකට Connect වීම
         const client = await Client.connect(HF_SPACE_ID);
-        
-        // AI API එකට වීඩියෝව යැවීම
         const result = await client.predict(ENDPOINT_NAME, {
             [INPUT_PARAM_NAME]: file
         });
         
         if (!result || !result.data || result.data.length === 0) {
-            throw new Error('Server returned empty response.');
+            throw new Error('Server එකෙන් ප්‍රතිචාරයක් නැත.[cite: 5]');
         }
         
         let outputVideoUrl = null;
         const firstOutput = result.data[0];
         
-        // URL එක නිවැරදිව වෙන් කර ගැනීම
         if (typeof firstOutput === 'string') {
             outputVideoUrl = firstOutput;
-        } else if (firstOutput && typeof firstOutput === 'object' && firstOutput.url) {
+        } else if (firstOutput?.url) {
             outputVideoUrl = firstOutput.url;
-        } else if (firstOutput && firstOutput.value && typeof firstOutput.value === 'string') {
-            outputVideoUrl = firstOutput.value;
         } else {
-            throw new Error('Unexpected response format from AI backend.');
-        }
-        
-        if (!outputVideoUrl) {
-            throw new Error('Processed video URL not found in response.');
+            throw new Error('වීඩියෝ URL එක සොයාගත නොහැක.[cite: 5]');
         }
         
         return outputVideoUrl;
     } catch (err) {
-        console.error('Gradio API error:', err);
-        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-            throw new Error('Server එක Sleep වී ඇත. කරුණාකර තත්පර 15කින් පමණ නැවත Convert ඔබන්න.');
-        } else if (err.message.includes('404')) {
-            throw new Error(`Endpoint ${ENDPOINT_NAME} not found on Space. Verify the Space's API.`);
-        } else {
-            throw err;
-        }
+        console.error('API Error:', err);
+        throw err;
     }
 }
 
-// Download ක්‍රියාකාරීත්වය
-async function downloadVideoAsBlob(videoUrl, filename = "enhanced_video.mp4") {
-    try {
-        const response = await fetch(videoUrl);
-        if (!response.ok) throw new Error('Download failed');
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-        console.error(err);
-        showError('Download error. වීඩියෝව මත Right-click කර "Save video as" තෝරන්න.');
-        window.open(videoUrl, '_blank');
-    }
-}
-
-// MAIN CONVERT ACTION (බොත්තම එබූ විට)
+// Convert බොත්තම එබූ විට[cite: 5]
 convertBtn.addEventListener('click', async () => {
-    if (!selectedFile) {
-        showError('කරුණාකර පළමුව වීඩියෝවක් තෝරන්න.');
-        return;
-    }
+    if (!selectedFile) return;
     
     resetOutput();
     processingOverlay.classList.remove('hidden');
     convertBtn.disabled = true;
-    
-    const handleError = (errMsg) => {
-        hideOverlayAndEnable();
-        showError(errMsg);
-        console.error(errMsg);
-    };
     
     try {
         const processedVideoUrl = await sendVideoToHF(selectedFile);
@@ -203,47 +162,33 @@ convertBtn.addEventListener('click', async () => {
         outputSection.classList.remove('hidden');
         processingOverlay.classList.add('hidden');
         convertBtn.disabled = false;
-        
-        const tempMsg = document.createElement('div');
-        tempMsg.className = 'fixed top-20 right-6 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm z-50 shadow-xl';
-        tempMsg.innerText = '✅ Conversion complete! Video ready.';
-        document.body.appendChild(tempMsg);
-        setTimeout(() => tempMsg.remove(), 3000);
-        
     } catch (error) {
-        console.error('Conversion error:', error);
-        let friendlyMsg = 'Server busy or API error. Please try again.';
-        if (error.message.includes('Server එක Sleep')) friendlyMsg = error.message;
-        else if (error.message.includes('fetch')) friendlyMsg = 'Network error. කරුණාකර නැවත උත්සාහ කරන්න.';
-        handleError(friendlyMsg);
+        hideOverlayAndEnable();
+        showError('සර්වර් එක කාර්යබහුලයි. කරුණාකර නැවත උත්සාහ කරන්න.[cite: 5]');
     }
 });
 
-// Download බොත්තම එබූ විට
+// Download කිරීමේ පහසුකම[cite: 5]
 downloadBtn.addEventListener('click', async () => {
-    if (!currentOutputUrl) {
-        showError('කරුණාකර වීඩියෝවක් Convert කරගන්න.');
-        return;
-    }
-    const originalName = selectedFile ? selectedFile.name.split('.')[0] : 'enhanced';
-    const filename = `${originalName}_converted.mp4`;
-    downloadBtn.innerText = '⏳ Preparing download...';
-    downloadBtn.disabled = true;
+    if (!currentOutputUrl) return;
+    
+    downloadBtn.innerText = '⏳ Preparing...';
     try {
-        await downloadVideoAsBlob(currentOutputUrl, filename);
+        const response = await fetch(currentOutputUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = "enhanced_video.mp4";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
     } catch (err) {
-        showError('සෘජුව Download කිරීමට නොහැක. වීඩියෝව Right-click කර Save As දෙන්න.');
+        showError('Download කිරීමට නොහැක. වීඩියෝව මත Right-click කර Save කරන්න.[cite: 5]');
     } finally {
         downloadBtn.innerText = '⬇️ Download High Quality Video';
-        downloadBtn.disabled = false;
     }
-});
-
-// පිටුවෙන් ඉවත් වීමේදී Memory Clear කිරීම
-window.addEventListener('beforeunload', () => {
-    if (originalPreview.src && originalPreview.src.startsWith('blob:')) URL.revokeObjectURL(originalPreview.src);
-    if (outputVideo.src && outputVideo.src.startsWith('blob:')) URL.revokeObjectURL(outputVideo.src);
 });
 
 updateConvertButton();
-console.log(`%c✅ Non Quality Drop AI | Connected to Space: ${HF_SPACE_ID}`, 'background: #ec489a; color: white; padding: 4px 8px; border-radius: 8px;');
