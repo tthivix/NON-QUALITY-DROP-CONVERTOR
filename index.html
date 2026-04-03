@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Fps Upload AI | Video FPS & Quality Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- External custom styles -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Import map for @gradio/client -->
+    <script type="importmap">
+        {
+            "imports": {
+                "@gradio/client": "https://cdn.jsdelivr.net/npm/@gradio/client@1.0.0/dist/index.min.js"
+            }
+        }
+    </script>
+</head>
+<body class="text-white antialiased">
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
+        <!-- HEADER -->
+        <header class="flex flex-wrap justify-between items-center mb-10 border-b border-white/10 pb-5 animate-fadeInDown">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-violet-600 flex items-center justify-center shadow-lg animate-pulse">
+                    <span class="font-bold text-xl">🎬</span>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400">Non Quality Drop AI</h1>
+                <span class="hidden md:inline-block text-xs bg-white/10 px-3 py-1 rounded-full">FPS + Quality ↑</span>
+            </div>
+            <div class="flex space-x-5 text-sm font-medium">
+                <a href="#" class="hover:text-pink-400 transition">Home</a>
+                <a href="#" class="hover:text-pink-400 transition">About</a>
+                <a href="#" class="hover:text-pink-400 transition">Privacy</a>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <div class="glass-card p-6 md:p-8 mb-10 animate-fadeInUp">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold">⚡ Increase FPS & Crystal Quality</h2>
+                <p class="text-gray-400 text-sm mt-2">Powered by THIVIX • Upload with Non Quality Drop</p>
+            </div>
+
+            <!-- UPLOAD ZONE -->
+            <div id="uploadZone" class="upload-zone relative border-2 border-dashed border-white/20 rounded-3xl p-8 text-center cursor-pointer transition-all hover:border-pink-400/70 hover:bg-white/5">
+                <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime,video/x-matroska" class="hidden" />
+                <div class="flex flex-col items-center justify-center space-y-3">
+                    <div class="text-5xl">🎥</div>
+                    <p class="text-lg font-medium">Click or drag & drop video</p>
+                    <p class="text-gray-400 text-sm">MP4, WebM, MOV up to 200MB</p>
+                    <span class="bg-pink-500/20 text-pink-300 text-xs px-3 py-1 rounded-full">Non Quality Drop Converter</span>
+                </div>
+            </div>
+
+            <!-- PREVIEW SECTION -->
+            <div id="previewSection" class="mt-6 hidden">
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <div class="w-full md:w-2/3">
+                        <p class="text-sm text-gray-300 mb-2 flex items-center gap-2"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Original video preview</p>
+                        <video id="originalPreview" controls class="w-full max-h-64 rounded-xl bg-black/50" style="object-fit: contain;"></video>
+                    </div>
+                    <div class="w-full md:w-1/3 bg-black/30 rounded-2xl p-4">
+                        <p class="text-sm font-semibold">📁 Selected file</p>
+                        <p id="fileInfo" class="text-xs text-gray-300 mt-1 break-all"></p>
+                        <button id="clearFileBtn" class="mt-3 text-xs bg-white/10 hover:bg-red-500/30 py-1 px-3 rounded-full transition">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONVERT BUTTON -->
+            <div class="flex justify-center mt-8">
+                <button id="convertBtn" disabled class="btn-glow bg-gradient-to-r from-pink-600 to-purple-700 text-white font-bold py-3 px-10 rounded-full text-lg shadow-xl disabled:opacity-40 disabled:grayscale transition-all disabled:cursor-not-allowed flex items-center gap-2">
+                    <span>✨</span> Convert <span>🚀</span>
+                </button>
+            </div>
+            <p class="text-center text-gray-500 text-xs mt-4">Output: 60fps + AI Non Quality Drop Settings</p>
+        </div>
+
+        <!-- OUTPUT SECTION -->
+        <div id="outputSection" class="glass-card p-6 md:p-8 hidden">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2">🎉 Convert Video <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full">ready</span></h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div>
+                    <video id="outputVideo" controls class="w-full rounded-2xl shadow-2xl" style="max-height: 280px;"></video>
+                </div>
+                <div class="flex flex-col items-center gap-4">
+                    <button id="downloadBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-8 rounded-full w-full flex items-center justify-center gap-2 transition text-lg shadow-lg">
+                        ⬇️ Download High Quality Video
+                    </button>
+                    <p class="text-gray-400 text-xs">Super smooth playback on TikTok • Real Video Quality</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-16 pt-6 border-t border-white/10 text-center text-gray-500 text-sm flex flex-wrap justify-center gap-6">
+            <a href="#" class="hover:text-pink-400 transition">Home</a>
+            <a href="#" class="hover:text-pink-400 transition">About</a>
+            <a href="#" class="hover:text-pink-400 transition">Privacy Policy</a>
+            <span>© 2026 Non Quality Drop Converter — AI Video Converter</span>
+        </footer>
+    </div>
+
+    <!-- PROCESSING OVERLAY with Adsterra slots -->
+    <div id="processingOverlay" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center hidden transition-all duration-300">
+        <div class="max-w-md w-full mx-4 bg-black/70 border border-white/20 rounded-3xl p-6 shadow-2xl text-center backdrop-blur-lg">
+            <div class="flex justify-center mb-4">
+                <div class="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <h3 class="text-2xl font-bold mb-1">Processing your video</h3>
+            <p class="text-gray-300 text-sm mb-4">Converting to 60fps with high quality...<br>Please wait a few seconds.</p>
+            
+            <!-- Adsterra Native Banner will be injected here -->
+            <div id="adContainer" class="my-4 p-3 bg-gray-900/70 rounded-xl border border-pink-400/30 min-h-[150px] flex flex-col items-center justify-center">
+                <div class="text-center text-gray-400 text-xs uppercase tracking-wider">📺 Advertisement</div>
+                <div class="bg-gradient-to-r from-pink-900/30 to-purple-900/30 rounded-lg p-3 mt-2 w-full text-center text-white/60 text-sm">
+                    Loading ad...
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">Please don't close the page. Video is being enhanced via AI cloud.</p>
+        </div>
+    </div>
+
+    <!-- ERROR TOAST -->
+    <div id="errorToast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-600/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl z-50 hidden transition-all duration-300 text-sm font-medium"></div>
+
+    <script type="module" src="script.js"></script>
+    <!-- Security: disable right-click and dev tools shortcuts -->
+    <script>
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
