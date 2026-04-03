@@ -1,9 +1,11 @@
 // ----------------------------------------------
-// CONFIGURATION: Hugging Face Space
+// CONFIGURATION
 // ----------------------------------------------
 const HF_SPACE_ID = "thivix/tiktok-hq-converter";
-const ENDPOINT_NAME = "/convert_video";
-const INPUT_PARAM_NAME = "input_path";
+const SPACE_URL = `https://${HF_SPACE_ID}.hf.space`;
+const API_URL = `${SPACE_URL}/gradio_api/call/convert_video`;
+// CORS proxy (free, no API key required)
+const CORS_PROXY = "https://corsproxy.io/";
 
 // ----------------------------------------------
 // DOM elements
@@ -23,7 +25,6 @@ const errorToast = document.getElementById('errorToast');
 
 let selectedFile = null;
 let currentOutputUrl = null;
-let gradioClient = null;
 
 function showError(message) {
     errorToast.innerText = message;
@@ -96,59 +97,75 @@ uploadZone.addEventListener('drop', (e) => {
 });
 
 // --------------------------------------------------------------
-// INIT GRADIO CLIENT (once)
+// Helper: fetch with CORS proxy
 // --------------------------------------------------------------
-async function initGradioClient() {
-    if (gradioClient) return gradioClient;
-    const { Client } = await import('@gradio/client');
-    console.log(`Connecting to ${HF_SPACE_ID} ...`);
-    gradioClient = await Client.connect(HF_SPACE_ID);
-    console.log('Connected to Space');
-    return gradioClient;
+async function proxiedFetch(url, options = {}) {
+    const proxyUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl, {
+        ...options,
+        headers: {
+            ...options.headers,
+            'Origin': window.location.origin,
+        }
+    });
+    return response;
 }
 
 // --------------------------------------------------------------
-// CONVERT USING GRADIO CLIENT (CORS handled internally)
+// Upload and convert using the proxy
 // --------------------------------------------------------------
-async function sendVideoToHF(file) {
-    const client = await initGradioClient();
-    
-    console.log(`Calling ${ENDPOINT_NAME} with file:`, file.name);
-    const result = await client.predict(ENDPOINT_NAME, {
-        [INPUT_PARAM_NAME]: file
+async function uploadAndConvert(file) {
+    const formData = new FormData();
+    formData.append('data', file);
+
+    console.log(`Sending request via proxy to ${API_URL} ...`);
+    const response = await proxiedFetch(API_URL, {
+        method: 'POST',
+        body: formData,
     });
-    
-    console.log('Raw result:', result);
-    
-    if (!result || !result.data || result.data.length === 0) {
-        throw new Error('Empty response from Space');
+
+    if (!response.ok) {
+        let errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText}. ${errorText.substring(0, 100)}`);
     }
-    
+
+    const result = await response.json();
+    const eventId = result.event_id;
+    if (!eventId) throw new Error('No event_id returned.');
+
+    const pollUrl = `${SPACE_URL}/gradio_api/call/convert_video/${eventId}`;
     let outputUrl = null;
-    const first = result.data[0];
-    
-    if (typeof first === 'string') {
-        outputUrl = first;
-    } else if (first && first.url) {
-        outputUrl = first.url;
-    } else if (first && first.path) {
-        outputUrl = first.path.startsWith('http') ? first.path : `https://${HF_SPACE_ID}.hf.space${first.path}`;
-    } else if (first && first.value && typeof first.value === 'string') {
-        outputUrl = first.value;
+    let attempts = 0;
+    const maxAttempts = 90; // 90 seconds
+
+    while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const pollRes = await proxiedFetch(pollUrl);
+        if (!pollRes.ok) continue;
+
+        const data = await pollRes.json();
+        if (data.event_status === 'COMPLETE' && data.data && data.data.length > 0) {
+            const outputFile = data.data[0];
+            if (typeof outputFile === 'string') {
+                outputUrl = outputFile;
+            } else if (outputFile && outputFile.url) {
+                outputUrl = outputFile.url;
+            } else if (outputFile && outputFile.path) {
+                outputUrl = outputFile.path.startsWith('http') ? outputFile.path : `${SPACE_URL}${outputFile.path}`;
+            }
+            if (outputUrl) break;
+        } else if (data.event_status === 'ERROR') {
+            throw new Error('Space processing error: ' + (data.error || 'unknown'));
+        }
+        attempts++;
     }
-    
-    if (!outputUrl) throw new Error('Could not extract video URL from response');
-    
-    // Ensure absolute URL
-    if (outputUrl.startsWith('/')) {
-        outputUrl = `https://${HF_SPACE_ID}.hf.space${outputUrl}`;
-    }
-    
+
+    if (!outputUrl) throw new Error('Processing timeout after 90 seconds.');
     return outputUrl;
 }
 
 // --------------------------------------------------------------
-// CONVERT BUTTON HANDLER
+// CONVERT BUTTON
 // --------------------------------------------------------------
 convertBtn.addEventListener('click', async () => {
     if (!selectedFile) {
@@ -160,15 +177,14 @@ convertBtn.addEventListener('click', async () => {
     processingOverlay.classList.remove('hidden');
     convertBtn.disabled = true;
 
-    // Show wake-up hint
     const statusMsg = document.createElement('div');
-    statusMsg.innerText = '⏳ Contacting Hugging Face Space... This may take 15-30s if sleeping.';
+    statusMsg.innerText = '⏳ Processing via CORS proxy... This may take up to 60 seconds.';
     statusMsg.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm z-50 shadow-xl';
     document.body.appendChild(statusMsg);
-    setTimeout(() => statusMsg.remove(), 12000);
+    setTimeout(() => statusMsg.remove(), 15000);
 
     try {
-        const outputVideoUrl = await sendVideoToHF(selectedFile);
+        const outputVideoUrl = await uploadAndConvert(selectedFile);
         currentOutputUrl = outputVideoUrl;
         outputVideo.src = outputVideoUrl;
         outputVideo.load();
@@ -183,9 +199,9 @@ convertBtn.addEventListener('click', async () => {
         console.error('Conversion error:', error);
         let friendlyMsg = 'Conversion failed. ';
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            friendlyMsg += 'CORS or network issue. Make sure the Space is public and the endpoint name is correct. Try again in a few seconds.';
+            friendlyMsg += 'CORS proxy may be blocked. Try using a different proxy or check your internet.';
         } else if (error.message.includes('404')) {
-            friendlyMsg += `Endpoint "${ENDPOINT_NAME}" not found. Verify the Space's API.`;
+            friendlyMsg += `Endpoint "/convert_video" not found. Verify the Space's API name.`;
         } else {
             friendlyMsg += error.message;
         }
@@ -195,7 +211,7 @@ convertBtn.addEventListener('click', async () => {
     }
 });
 
-// Download handler
+// Download handler (same as before)
 downloadBtn.addEventListener('click', async () => {
     if (!currentOutputUrl) {
         showError('No converted video found. Convert a video first.');
@@ -235,4 +251,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 updateConvertButton();
-console.log(`✅ Non Quality Drop AI | Space: ${HF_SPACE_ID} | Endpoint: ${ENDPOINT_NAME}`);
+console.log(`✅ Non Quality Drop AI | Using CORS proxy: ${CORS_PROXY}`);
