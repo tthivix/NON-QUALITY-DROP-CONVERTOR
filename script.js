@@ -1,11 +1,14 @@
 // ----------------------------------------------
 // CONFIGURATION
 // ----------------------------------------------
-const HF_SPACE_ID = "thivix/tiktok-hq-converter";
-const SPACE_URL = `https://${HF_SPACE_ID}.hf.space`;
-const API_URL = `${SPACE_URL}/gradio_api/call/convert_video`;
-// CORS proxy (free, no API key required)
-const CORS_PROXY = "https://corsproxy.io/";
+// IMPORTANT: Hugging Face Space subdomain uses DASH, not slash
+const HF_SPACE_NAME = "thivix-tiktok-hq-converter";  // dash instead of slash
+const SPACE_URL = `https://${HF_SPACE_NAME}.hf.space`;
+const API_ENDPOINT = "/gradio_api/call/convert_video";
+
+// CORS proxies (try first, fallback to second)
+const CORS_PROXY_1 = "https://cors-anywhere.herokuapp.com/";
+const CORS_PROXY_2 = "https://api.allorigins.win/raw?url=";
 
 // ----------------------------------------------
 // DOM elements
@@ -25,6 +28,7 @@ const errorToast = document.getElementById('errorToast');
 
 let selectedFile = null;
 let currentOutputUrl = null;
+let activeProxy = CORS_PROXY_1;
 
 function showError(message) {
     errorToast.innerText = message;
@@ -97,10 +101,17 @@ uploadZone.addEventListener('drop', (e) => {
 });
 
 // --------------------------------------------------------------
-// Helper: fetch with CORS proxy
+// Helper: fetch with CORS proxy (properly encoded)
 // --------------------------------------------------------------
 async function proxiedFetch(url, options = {}) {
-    const proxyUrl = `${CORS_PROXY}${encodeURIComponent(url)}`;
+    let proxyUrl;
+    if (activeProxy === CORS_PROXY_1) {
+        // cors-anywhere expects the target URL appended directly
+        proxyUrl = activeProxy + url;
+    } else {
+        // allorigins expects ?url= parameter
+        proxyUrl = activeProxy + encodeURIComponent(url);
+    }
     const response = await fetch(proxyUrl, {
         ...options,
         headers: {
@@ -118,11 +129,28 @@ async function uploadAndConvert(file) {
     const formData = new FormData();
     formData.append('data', file);
 
-    console.log(`Sending request via proxy to ${API_URL} ...`);
-    const response = await proxiedFetch(API_URL, {
-        method: 'POST',
-        body: formData,
-    });
+    const fullApiUrl = SPACE_URL + API_ENDPOINT;
+    console.log(`Sending request via ${activeProxy} to ${fullApiUrl} ...`);
+    
+    let response;
+    try {
+        response = await proxiedFetch(fullApiUrl, {
+            method: 'POST',
+            body: formData,
+        });
+    } catch (err) {
+        // If first proxy fails, try second
+        if (activeProxy === CORS_PROXY_1) {
+            console.warn("First proxy failed, switching to fallback proxy");
+            activeProxy = CORS_PROXY_2;
+            response = await proxiedFetch(fullApiUrl, {
+                method: 'POST',
+                body: formData,
+            });
+        } else {
+            throw err;
+        }
+    }
 
     if (!response.ok) {
         let errorText = await response.text();
@@ -178,10 +206,19 @@ convertBtn.addEventListener('click', async () => {
     convertBtn.disabled = true;
 
     const statusMsg = document.createElement('div');
-    statusMsg.innerText = '⏳ Processing via CORS proxy... This may take up to 60 seconds.';
+    statusMsg.innerText = '⏳ Processing via CORS proxy... First time may take 30-60 seconds.';
     statusMsg.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm z-50 shadow-xl';
     document.body.appendChild(statusMsg);
     setTimeout(() => statusMsg.remove(), 15000);
+
+    // Note for cors-anywhere: first-time users need to visit the proxy link to enable
+    if (activeProxy === CORS_PROXY_1) {
+        const enableMsg = document.createElement('div');
+        enableMsg.innerHTML = 'ℹ️ If using cors-anywhere, you may need to <a href="https://cors-anywhere.herokuapp.com/" target="_blank" style="text-decoration:underline;">click here to enable temporary access</a>.';
+        enableMsg.className = 'fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-yellow-700 text-white px-4 py-2 rounded-full text-xs z-50 shadow-xl';
+        document.body.appendChild(enableMsg);
+        setTimeout(() => enableMsg.remove(), 10000);
+    }
 
     try {
         const outputVideoUrl = await uploadAndConvert(selectedFile);
@@ -199,9 +236,9 @@ convertBtn.addEventListener('click', async () => {
         console.error('Conversion error:', error);
         let friendlyMsg = 'Conversion failed. ';
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            friendlyMsg += 'CORS proxy may be blocked. Try using a different proxy or check your internet.';
+            friendlyMsg += 'CORS proxy blocked. Try opening https://cors-anywhere.herokuapp.com/ and click "Request temporary access", then retry.';
         } else if (error.message.includes('404')) {
-            friendlyMsg += `Endpoint "/convert_video" not found. Verify the Space's API name.`;
+            friendlyMsg += `Endpoint "${API_ENDPOINT}" not found. Verify the Space's API name.`;
         } else {
             friendlyMsg += error.message;
         }
@@ -211,7 +248,7 @@ convertBtn.addEventListener('click', async () => {
     }
 });
 
-// Download handler (same as before)
+// Download handler
 downloadBtn.addEventListener('click', async () => {
     if (!currentOutputUrl) {
         showError('No converted video found. Convert a video first.');
@@ -251,4 +288,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 updateConvertButton();
-console.log(`✅ Non Quality Drop AI | Using CORS proxy: ${CORS_PROXY}`);
+console.log(`✅ Non Quality Drop AI | Space URL: ${SPACE_URL} | Endpoint: ${API_ENDPOINT}`);
