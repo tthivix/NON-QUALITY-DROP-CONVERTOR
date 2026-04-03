@@ -6,7 +6,7 @@ const SPACE_URL = `https://${HF_SPACE_ID}.hf.space`;
 const API_URL = `${SPACE_URL}/gradio_api/call/convert_video`;
 
 // ----------------------------------------------
-// DOM elements
+// DOM elements (keep as before)
 // ----------------------------------------------
 const uploadZone = document.getElementById('uploadZone');
 const fileInput = document.getElementById('videoInput');
@@ -27,7 +27,7 @@ let currentOutputUrl = null;
 function showError(message) {
     errorToast.innerText = message;
     errorToast.classList.remove('hidden');
-    setTimeout(() => errorToast.classList.add('hidden'), 6000);
+    setTimeout(() => errorToast.classList.add('hidden'), 8000);
 }
 
 function hideOverlayAndEnable() {
@@ -95,43 +95,60 @@ uploadZone.addEventListener('drop', (e) => {
 });
 
 // --------------------------------------------------------------
-// DIRECT GRADIO API CALL (No @gradio/client required)
+// CHECK IF SPACE IS PUBLIC AND REACHABLE
+// --------------------------------------------------------------
+async function checkSpaceAvailability() {
+    try {
+        // Try to fetch the Space homepage - if 200, it's public
+        const response = await fetch(SPACE_URL, { mode: 'no-cors' }); // no-cors gives opaque but still reachable
+        // Alternative: try to fetch a simple endpoint
+        const testApi = await fetch(`${SPACE_URL}/gradio_api/info`, { method: 'HEAD' });
+        if (testApi.ok || testApi.type === 'opaque') return true;
+        return false;
+    } catch (e) {
+        console.warn('Space check failed:', e);
+        return false;
+    }
+}
+
+// --------------------------------------------------------------
+// DIRECT GRADIO API CALL (works for public spaces)
 // --------------------------------------------------------------
 async function uploadAndConvert(file) {
-    // Step 1: Upload file to the prediction endpoint
     const formData = new FormData();
-    formData.append('data', file);  // Gradio expects the file under 'data' key
+    formData.append('data', file);
 
     console.log(`Sending request to ${API_URL} ...`);
     const response = await fetch(API_URL, {
         method: 'POST',
         body: formData,
         mode: 'cors',
+        headers: {
+            // No extra headers needed for public spaces
+        }
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        let errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText}. ${errorText.substring(0, 100)}`);
     }
 
-    // Step 2: Get the event ID (Gradio returns a URL like /gradio_api/call/convert_video/12345)
     const result = await response.json();
     const eventId = result.event_id;
-    if (!eventId) throw new Error('No event_id returned from Space.');
+    if (!eventId) throw new Error('No event_id returned.');
 
-    // Step 3: Poll for the result
     const pollUrl = `${SPACE_URL}/gradio_api/call/convert_video/${eventId}`;
     let outputUrl = null;
     let attempts = 0;
-    const maxAttempts = 60; // ~60 seconds timeout
+    const maxAttempts = 90; // 90 seconds timeout
 
     while (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 sec
+        await new Promise(resolve => setTimeout(resolve, 1000));
         const pollRes = await fetch(pollUrl);
         if (!pollRes.ok) continue;
 
         const data = await pollRes.json();
         if (data.event_status === 'COMPLETE' && data.data && data.data.length > 0) {
-            // Gradio returns a file object with 'url' property
             const outputFile = data.data[0];
             if (typeof outputFile === 'string') {
                 outputUrl = outputFile;
@@ -142,17 +159,17 @@ async function uploadAndConvert(file) {
             }
             if (outputUrl) break;
         } else if (data.event_status === 'ERROR') {
-            throw new Error('Space encountered an error during processing.');
+            throw new Error('Space processing error: ' + (data.error || 'unknown'));
         }
         attempts++;
     }
 
-    if (!outputUrl) throw new Error('Processing timeout or no video returned.');
+    if (!outputUrl) throw new Error('Processing timeout after 90 seconds.');
     return outputUrl;
 }
 
 // --------------------------------------------------------------
-// CONVERT BUTTON CLICK HANDLER
+// CONVERT BUTTON
 // --------------------------------------------------------------
 convertBtn.addEventListener('click', async () => {
     if (!selectedFile) {
@@ -164,17 +181,20 @@ convertBtn.addEventListener('click', async () => {
     processingOverlay.classList.remove('hidden');
     convertBtn.disabled = true;
 
-    // Show wake-up message if first try
-    if (!window._conversionAttempted) {
-        const wakeMsg = document.createElement('div');
-        wakeMsg.innerText = '⏳ Hugging Face Space may be sleeping. First attempt may take 20-30 seconds...';
-        wakeMsg.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-yellow-600 text-white px-4 py-2 rounded-full text-sm z-50 shadow-xl';
-        document.body.appendChild(wakeMsg);
-        setTimeout(() => wakeMsg.remove(), 8000);
-        window._conversionAttempted = true;
-    }
+    // Show a "waking up" message
+    const wakeMsg = document.createElement('div');
+    wakeMsg.innerText = '⏳ Connecting to Hugging Face Space... This may take up to 30 seconds if the Space is sleeping.';
+    wakeMsg.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-sm z-50 shadow-xl';
+    document.body.appendChild(wakeMsg);
+    setTimeout(() => wakeMsg.remove(), 10000);
 
     try {
+        // First, check if space is reachable (optional)
+        const isReachable = await checkSpaceAvailability();
+        if (!isReachable) {
+            console.warn('Space may be private or offline. Still attempting...');
+        }
+
         const outputVideoUrl = await uploadAndConvert(selectedFile);
         currentOutputUrl = outputVideoUrl;
         outputVideo.src = outputVideoUrl;
@@ -190,9 +210,11 @@ convertBtn.addEventListener('click', async () => {
         console.error('Conversion error:', error);
         let friendlyMsg = 'Conversion failed. ';
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            friendlyMsg += 'Cannot reach Hugging Face Space. Please check if the Space is public and running. Try again in 1 minute.';
+            friendlyMsg += 'Cannot reach Hugging Face Space. Please ensure the Space is PUBLIC and running. Go to Settings → Change visibility to Public. Then try again.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+            friendlyMsg += 'The Space requires authentication. Make it PUBLIC in the Space settings.';
         } else if (error.message.includes('404')) {
-            friendlyMsg += 'API endpoint not found. The Space might have changed.';
+            friendlyMsg += 'API endpoint not found. Check that your Space has an endpoint named "/convert_video".';
         } else {
             friendlyMsg += error.message;
         }
@@ -213,7 +235,6 @@ downloadBtn.addEventListener('click', async () => {
     downloadBtn.innerText = '⏳ Preparing...';
     downloadBtn.disabled = true;
     try {
-        // Try to fetch as blob (may fail due to CORS, but we offer fallback)
         const response = await fetch(currentOutputUrl);
         if (response.ok) {
             const blob = await response.blob();
@@ -243,4 +264,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 updateConvertButton();
-console.log(`✅ Non Quality Drop AI | Using direct API: ${API_URL}`);
+console.log(`✅ Non Quality Drop AI | Using API: ${API_URL}`);
