@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Non Quality Drop Upload AI | TikTok Video FPS Converter</title>
+
+    <!-- Google Fonts: Syne + DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- No @gradio/client import needed — script.js uses Gradio REST API directly -->
+
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Adsterra Social Bar - loads every visit -->
+    <script>
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'https://pl29047079.profitablecpmratenetwork.com/14/44/2e/14442e03f8167aa5d1d29ee3ea1d669b.js';
+            s.async = true;
+            document.head.appendChild(s);
+        })();
+    </script>
+    <!-- Adsterra Popunder - loads every visit -->
+    <script>
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'https://pl29047081.profitablecpmratenetwork.com/77/08/68/770868f68587939e9edcce4eec9fdc35.js';
+            s.async = true;
+            document.head.appendChild(s);
+        })();
+    </script>
+</head>
+<body>
+
+    <!-- Animated background particles -->
+    <div class="bg-particles" id="bgParticles"></div>
+    <!-- Grid overlay -->
+    <div class="grid-overlay"></div>
+
+    <!-- MAIN WRAPPER -->
+    <div class="site-wrapper">
+
+        <!-- ===== HEADER ===== -->
+        <header class="site-header">
+            <div class="header-inner">
+                <div class="logo-group">
+                    <div class="logo-icon">
+                        <span class="logo-emoji">🎬</span>
+                        <div class="logo-ring"></div>
+                    </div>
+                    <div class="logo-text">
+                        <span class="logo-main">Non Quality Drop</span>
+                        <span class="logo-sub">Upload AI</span>
+                    </div>
+                </div>
+                <nav class="header-nav">
+                    <a href="#">Home</a>
+                    <a href="#">How It Works</a>
+                    <a href="#">Privacy</a>
+                </nav>
+                <div class="header-badge">
+                    <span class="pulse-dot"></span>
+                    AI Online
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== HERO ===== -->
+        <section class="hero-section">
+            <div class="hero-tag"><i class="fa-solid fa-bolt"></i> Powered by THIVIX AI</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">TikTok Video</span><br>
+                Quality Booster
+            </h1>
+            <p class="hero-desc">Upload your video — get it back in silky <strong>60 FPS</strong> with zero quality drop. Built for creators.</p>
+            <div class="hero-stats">
+                <div class="stat"><span class="stat-num">60</span><span class="stat-label">FPS Output</span></div>
+                <div class="stat-divider"></div>
+                <div class="stat"><span class="stat-num">4K</span><span class="stat-label">Quality AI</span></div>
+                <div class="stat-divider"></div>
+                <div class="stat"><span class="stat-num">100%</span><span class="stat-label">Non Drop</span></div>
+            </div>
+        </section>
+
+        <!-- ===== UPLOAD CARD ===== -->
+        <section class="upload-section">
+            <div class="card upload-card">
+                <!-- Upload Zone -->
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime,video/x-matroska" class="file-input-hidden" />
+                    <div class="upload-inner">
+                        <div class="upload-icon-wrap">
+                            <div class="upload-icon-circle">
+                                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            </div>
+                            <div class="upload-icon-rings">
+                                <div class="ring ring1"></div>
+                                <div class="ring ring2"></div>
+                                <div class="ring ring3"></div>
+                            </div>
+                        </div>
+                        <p class="upload-title">Drop your TikTok video here</p>
+                        <p class="upload-sub">or <span class="upload-link">browse files</span> to upload</p>
+                        <div class="upload-formats">
+                            <span>MP4</span><span>WebM</span><span>MOV</span><span>MKV</span>
+                        </div>
+                        <p class="upload-limit">Max 200MB · Recommended for best results</p>
+                    </div>
+                </div>
+
+                <!-- Preview Section (hidden by default) -->
+                <div id="previewSection" class="preview-section hidden">
+                    <div class="preview-grid">
+                        <div class="preview-video-wrap">
+                            <div class="preview-label"><span class="dot green"></span> Original Preview</div>
+                            <video id="originalPreview" controls class="preview-video"></video>
+                        </div>
+                        <div class="file-info-card">
+                            <div class="file-icon"><i class="fa-solid fa-file-video"></i></div>
+                            <p class="file-info-title">Selected File</p>
+                            <p id="fileInfo" class="file-info-name"></p>
+                            <button id="clearFileBtn" class="btn-clear"><i class="fa-solid fa-trash-can"></i> Remove</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Convert Button -->
+                <div class="convert-btn-wrap">
+                    <button id="convertBtn" disabled class="btn-convert">
+                        <span class="btn-convert-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                        <span class="btn-convert-text">Convert to 60FPS</span>
+                        <span class="btn-convert-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                    </button>
+                    <p class="convert-note">Output: 60fps + AI Non Quality Drop Enhancement</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ADSTERRA NATIVE BANNER 1 (above output) ===== -->
+        <section class="ad-section">
+            <div class="ad-label">Sponsored</div>
+            <script async="async" data-cfasync="false" src="https://pl29047080.profitablecpmratenetwork.com/cc751e76ba94e19cee6e3a94b56cb103/invoke.js"></script>
+            <div id="container-cc751e76ba94e19cee6e3a94b56cb103"></div>
+        </section>
+
+        <!-- ===== OUTPUT SECTION (hidden) ===== -->
+        <section id="outputSection" class="output-section hidden">
+            <div class="card output-card">
+                <div class="output-header">
+                    <div class="output-badge"><i class="fa-solid fa-circle-check"></i> Conversion Complete</div>
+                    <h3 class="output-title">Your Enhanced Video is Ready 🎉</h3>
+                </div>
+                <div class="output-grid">
+                    <div class="output-video-wrap">
+                        <video id="outputVideo" controls class="output-video"></video>
+                        <div class="output-video-label"><i class="fa-solid fa-star"></i> 60FPS Enhanced</div>
+                    </div>
+                    <div class="output-actions">
+                        <div class="quality-badges">
+                            <div class="q-badge"><i class="fa-solid fa-bolt"></i> 60 FPS</div>
+                            <div class="q-badge"><i class="fa-solid fa-gem"></i> AI Enhanced</div>
+                            <div class="q-badge"><i class="fa-brands fa-tiktok"></i> TikTok Ready</div>
+                        </div>
+                        <button id="downloadBtn" class="btn-download">
+                            <i class="fa-solid fa-download"></i>
+                            Download High Quality Video
+                        </button>
+                        <p class="download-note">Smooth 60fps playback · Perfect for TikTok upload</p>
+                        <button id="convertAnotherBtn" class="btn-another">
+                            <i class="fa-solid fa-rotate"></i> Convert Another Video
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== HOW IT WORKS ===== -->
+        <section class="how-section">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <div class="step-icon"><i class="fa-solid fa-upload"></i></div>
+                    <h4>Upload Video</h4>
+                    <p>Drop your TikTok MP4, MOV or WebM file</p>
+                </div>
+                <div class="step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <div class="step-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <h4>AI Processes</h4>
+                    <p>Our THIVIX AI enhances quality and boosts FPS</p>
+                </div>
+                <div class="step-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                <div class="step-card">
+                    <div class="step-num">03</div>
+                    <div class="step-icon"><i class="fa-solid fa-download"></i></div>
+                    <h4>Download</h4>
+                    <p>Get your 60fps crystal-clear video instantly</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ADSTERRA NATIVE BANNER 2 (before footer) ===== -->
+        <section class="ad-section" style="margin-bottom:1rem;">
+            <div class="ad-label">Sponsored</div>
+            <div id="container-cc751e76ba94e19cee6e3a94b56cb103-2"></div>
+            <script>
+                (function(){
+                    var s=document.createElement('script');
+                    s.async=true; s.setAttribute('data-cfasync','false');
+                    s.src='https://pl29047080.profitablecpmratenetwork.com/cc751e76ba94e19cee6e3a94b56cb103/invoke.js?t='+Date.now();
+                    document.getElementById('container-cc751e76ba94e19cee6e3a94b56cb103-2').appendChild(s);
+                })();
+            </script>
+        </section>
+
+        <!-- ===== FOOTER ===== -->
+        <footer class="site-footer">
+            <div class="footer-logo">
+                <span>🎬</span> Non Quality Drop Upload AI
+            </div>
+            <nav class="footer-nav">
+                <a href="#">Home</a>
+                <a href="#">About</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms</a>
+            </nav>
+            <p class="footer-copy">© 2026 Non Quality Drop AI — Powered by THIVIX · All rights reserved</p>
+        </footer>
+
+    </div><!-- /site-wrapper -->
+
+    <!-- ===== PROCESSING OVERLAY ===== -->
+    <div id="processingOverlay" class="overlay hidden">
+        <div class="overlay-card">
+            <div class="overlay-spinner-wrap">
+                <div class="spinner-outer"></div>
+                <div class="spinner-inner"></div>
+                <div class="spinner-core"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            </div>
+            <h3 class="overlay-title">Enhancing Your Video</h3>
+            <p class="overlay-sub">AI is processing your TikTok video...<br>Please keep this tab open.</p>
+
+            <!-- Progress bar -->
+            <div class="progress-wrap">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <p class="progress-label" id="progressLabel">Uploading to AI Cloud...</p>
+
+            <!-- Ad inside overlay -->
+            <div class="overlay-ad">
+                <div class="overlay-ad-label">📺 Advertisement</div>
+                <div class="overlay-ad-box">
+                    <span>🔥 Your Ad Here 🔥</span><br>
+                    <small>Replace this with Adsterra / AdSense code</small>
+                </div>
+            </div>
+
+            <p class="overlay-note"><i class="fa-solid fa-shield-halved"></i> Secure · Private · No storage</p>
+        </div>
+    </div>
+
+    <!-- ===== ERROR TOAST ===== -->
+    <div id="errorToast" class="toast toast-error hidden">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="toastMsg"></span>
+    </div>
+
+    <!-- ===== SUCCESS TOAST ===== -->
+    <div id="successToast" class="toast toast-success hidden">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>✅ Conversion complete! Video ready.</span>
+    </div>
+
+    <script type="module" src="script.js?v=99"></script>
+
+    <script>
+        // ✅ Force reload ads on every page visit (bypass cache)
+        window.addEventListener('DOMContentLoaded', function() {
+
+            // Re-inject Social Bar every visit
+            setTimeout(function() {
+                var sb = document.createElement('script');
+                sb.src = 'https://pl29047079.profitablecpmratenetwork.com/14/44/2e/14442e03f8167aa5d1d29ee3ea1d669b.js?t=' + Date.now();
+                document.body.appendChild(sb);
+            }, 500);
+
+            // Re-inject Popunder every visit
+            setTimeout(function() {
+                var pu = document.createElement('script');
+                pu.src = 'https://pl29047081.profitablecpmratenetwork.com/77/08/68/770868f68587939e9edcce4eec9fdc35.js?t=' + Date.now();
+                document.body.appendChild(pu);
+            }, 1000);
+
+            // Re-inject Native Banner every visit
+            setTimeout(function() {
+                var nb = document.createElement('script');
+                nb.async = true;
+                nb.setAttribute('data-cfasync', 'false');
+                nb.src = 'https://pl29047080.profitablecpmratenetwork.com/cc751e76ba94e19cee6e3a94b56cb103/invoke.js?t=' + Date.now();
+                var container = document.getElementById('container-cc751e76ba94e19cee6e3a94b56cb103');
+                if (container) {
+                    container.innerHTML = '';
+                    container.appendChild(nb);
+                }
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
